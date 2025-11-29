@@ -313,7 +313,25 @@ const ShortsMaker = ({ onBack }) => {
                                 <div className="button-group" style={{ display: 'flex', gap: '8px' }}>
                                     <button
                                         className="action-btn"
-                                        onClick={() => navigator.clipboard.writeText(result.shorts_script)}
+                                        onClick={() => {
+                                            const blob = new Blob([result.shorts_script], { type: 'text/plain' });
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = 'shorts_script.txt';
+                                            a.click();
+                                            URL.revokeObjectURL(url);
+                                        }}
+                                        style={{ background: '#2ecc71', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
+                                    >
+                                        💾 저장
+                                    </button>
+                                    <button
+                                        className="action-btn"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(result.shorts_script);
+                                            alert('대본이 복사되었습니다!');
+                                        }}
                                         style={{ background: '#555', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
                                     >
                                         📋 복사

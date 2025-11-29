@@ -10,7 +10,8 @@ import { trackEvent } from './utils/analytics';
 import { mockVideos } from './data/mockVideos';
 import './App.css';
 
-import ShortsMaker from './pages/ShortsMaker'; // Import the new component
+import ShortsMaker from './pages/ShortsMaker';
+import GadaTranslator from './pages/GadaTranslator';
 
 function App() {
   const [currentView, setCurrentView] = useState('home');
@@ -38,8 +39,10 @@ function App() {
         return <Discover />;
       case 'profile':
         return <Profile />;
-      case 'shorts-maker': // Add new route
+      case 'shorts-maker':
         return <ShortsMaker onBack={() => setCurrentView('home')} />;
+      case 'gada-translator':
+        return <GadaTranslator onBack={() => setCurrentView('home')} />;
       default:
         return <Feed isHighlightActive={isHighlightActive} videos={videos} />;
     }
@@ -48,6 +51,13 @@ function App() {
   return (
     <div id="app-container" className={`app-container theme-${theme}`}>
       <div className="top-controls">
+        <button
+          className="control-btn"
+          onClick={() => setCurrentView('gada-translator')}
+          title="Gada Translator"
+        >
+          🔨
+        </button>
         <button
           className="control-btn"
           onClick={() => setCurrentView('shorts-maker')}

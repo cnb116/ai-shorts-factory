@@ -1,0 +1,72 @@
+.gada-container {
+    background-color: #121212;
+    color: #ffffff;
+    font-family: 'Suit', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.gada-back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 1rem;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.gada-back-btn:hover {
+    color: white;
+}
+
+.gada-title {
+    margin-bottom: 20px;
+    color: #FFD700;
+    text-align: center;
+}
+
+.gada-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 15px;
+    font-size: 20px;
+    border-radius: 10px;
+    border: none;
+    margin-bottom: 20px;
+    text-align: center;
+    background-color: #333;
+    color: white;
+    outline: none;
+}
+
+.gada-input:focus {
+    box-shadow: 0 0 0 2px #FFD700;
+}
+
+.gada-result {
+    font-size: 30px;
+    font-weight: bold;
+    color: #555;
+    min-height: 40px;
+    transition: color 0.3s;
+    text-align: center;
+}
+
+.gada-result.found {
+    color: #00FF88;
+}
+
+.gada-footer {
+    margin-top: 50px;
+    font-size: 12px;
+    color: #555;
+}
