@@ -1,0 +1,18 @@
+.feed-container {
+    height: 100vh;
+    width: 100%;
+    max-width: 56.25vh;
+    /* Enforce 9:16 aspect ratio based on height */
+    margin: 0 auto;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    background-color: black;
+    position: relative;
+}
+
+.video-wrapper {
+    height: 100vh;
+    width: 100%;
+    scroll-snap-align: start;
+    position: relative;
+}

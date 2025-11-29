@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shorts Maker: Auto-Scale Edition</title>
+    <!-- Matter.js 물리 엔진 CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+    <style>
+        /* [Global Reset & Layout] */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background-color: #1a1a1a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* [Header] */
+        header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #eee;
+            letter-spacing: -0.5px;
+        }
+
+        p {
+            font-size: 0.9rem;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* [Main Workspace] */
+        .studio-container {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* [Phone Frame (9:16)] */
+        #canvas-container {
+            width: 540px;
+            height: 960px;
+            background: #000;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 2px solid #333;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* [Control Panel] */
+        .controls {
+            width: 300px;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #bbb;
+        }
+
+        button,
+        select,
+        input[type="file"]::file-selector-button {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .btn-upload {
+            background: #3b82f6;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-upload:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .btn-gravity {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .btn-gravity:hover {
+            background: #7c3aed;
+        }
+
+        .btn-gravity.active {
+            background: #f59e0b;
+            color: #000;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-reset {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #dc2626;
+        }
+
+        select {
+            background: #444;
+            color: white;
+            outline: none;
+        }
+
+        .tip {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 10px;
+            line-height: 1.4;
+            background: #222;
+            padding: 10px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Shorts Physics Studio</h1>
+        <p>Auto-Sized Product Drop Tool</p>
+    </header>
+
+    <div class="studio-container">
+        <div id="canvas-container"></div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>🛍️ 상품 추가 (Add Product)</label>
+                <div class="file-input-wrapper">
+                    <button class="btn-upload">이미지 업로드 (.png / .jpg)</button>
+                    <input type="file" id="imageLoader" accept="image/*" multiple>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>🎨 배경 설정 (Chroma Key)</label>
+                <select id="bgSelector">
+                    <option value="#f0f0f0">스튜디오 화이트 (Clean)</option>
+                    <option value="#00b140">크로마키 그린 (Green Screen)</option>
+                    <option value="#1a1a1a">다크 모드 (Dark)</option>
+                    <option value="#ff00ff">마젠타 (Magenta)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>✨ 특수 효과 (FX)</label>
+                <button id="gravityBtn" class="btn-gravity">🚀 Zero Gravity (Off)</button>
+            </div>
+
+            <div class="control-group">
+                <button id="resetBtn" class="btn-reset">🔄 화면 초기화 (Reset)</button>
+            </div>
+
+            <div class="tip">
+                <strong>Update:</strong><br>
+                이제 이미지가 자동으로 화면의 25% 크기로 조정되어 투하됩니다.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // [1] Matter.js 모듈 설정
+        const Engine = Matter.Engine,
+            Render = Matter.Render,
+            Runner = Matter.Runner,
+            World = Matter.World,
+            Bodies = Matter.Bodies,
+            Composite = Matter.Composite,
+            Mouse = Matter.Mouse,
+            MouseConstraint = Matter.MouseConstraint,
+            Events = Matter.Events;
+
+        // [2] 캔버스 설정 (9:16 비율)
+        const width = 540;
+        const height = 960;
+        let isZeroGravity = false;
+
+        const engine = Engine.create();
+        const world = engine.world;
+
+        const container = document.getElementById('canvas-container');
+        const render = Render.create({
+            element: container,
+            engine: engine,
+            options: {
+                width: width,
+                height: height,
+                background: '#f0f0f0',
+                wireframes: false,
+                pixelRatio: window.devicePixelRatio
+            }
+        });
+
+        // [3] 벽 생성 (천장 포함)
+        const wallOptions = { isStatic: true, render: { visible: false }, restitution: 0.5 };
+        const floor = Bodies.rectangle(width / 2, height + 50, width, 100, wallOptions);
+
+        // 천장: 평소엔 열려있음 (y=-200), 무중력일 때 닫힘
+        const ceiling = Bodies.rectangle(width / 2, -200, width, 100, wallOptions);
+
+        const leftWall = Bodies.rectangle(-50, height / 2, 100, height, wallOptions);
+        const rightWall = Bodies.rectangle(width + 50, height / 2, 100, height, wallOptions);
+
+        World.add(world, [floor, ceiling, leftWall, rightWall]);
+
+        // [4] 마우스
+        const mouse = Mouse.create(render.canvas);
+        const mouseConstraint = MouseConstraint.create(engine, {
+            mouse: mouse,
+            constraint: { stiffness: 0.2, render: { visible: false } }
+        });
+        World.add(world, mouseConstraint);
+        render.mouse = mouse;
+
+        // [5] 실행
+        Render.run(render);
+        const runner = Runner.create();
+        Runner.run(runner, engine);
+
+        // ==========================================
+        // 기능 1: 이미지 업로드 (자동 크기 조절)
+        // ==========================================
+        document.getElementById('imageLoader').addEventListener('change', function (e) {
+            const files = e.target.files;
+            if (!files.length) return;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const img = new Image();
+                    img.src = event.target.result;
+
+                    img.onload = function () {
+                        // [핵심] 화면 너비의 25%로 자동 크기 조절
+                        const targetWidth = width * 0.25; // 540 * 0.25 = 135px
+                        const scale = targetWidth / img.width;
+                        const bodyWidth = img.width * scale;
+                        const bodyHeight = img.height * scale;
+
+                        // 랜덤 위치 투하
+                        const randomX = Math.random() * (width - 100) + 50;
+                        const startY = -150; // 천장 아래에서 시작
+
+                        const productBody = Bodies.rectangle(randomX, startY, bodyWidth, bodyHeight, {
+                            restitution: 0.5,
+                            friction: 0.1,
+                            angle: Math.random() * Math.PI,
+                            render: {
+                                sprite: {
+                                    texture: img.src,
+                                    xScale: scale,
+                                    yScale: scale
+                                }
+                            }
+                        });
+
+                        World.add(world, productBody);
+                    };
+                };
+                reader.readAsDataURL(file);
+            });
+            this.value = '';
+        });
+
+        // ==========================================
+        // 기능 2: 배경색
+        // ==========================================
+        document.getElementById('bgSelector').addEventListener('change', function (e) {
+            render.options.background = e.target.value;
+        });
+
+        // ==========================================
+        // 기능 3: 무중력 (천장 닫기 포함)
+        // ==========================================
+        const gravityBtn = document.getElementById('gravityBtn');
+        gravityBtn.addEventListener('click', function () {
+            isZeroGravity = !isZeroGravity;
+
+            if (isZeroGravity) {
+                // 무중력 ON
+                engine.gravity.y = 0;
+                engine.gravity.scale = 0.0005;
+
+                // 천장 닫기 (화면 상단 막기)
+                Matter.Body.setPosition(ceiling, { x: width / 2, y: -50 });
+
+                // 둥둥 뜨는 효과
+                Composite.allBodies(world).forEach(body => {
+                    if (!body.isStatic) {
+                        body.frictionAir = 0.005;
+                        Matter.Body.applyForce(body, body.position, {
+                            x: (Math.random() - 0.5) * 0.05,
+                            y: (Math.random() - 0.5) * 0.05
+                        });
+                    }
+                });
+
+                gravityBtn.textContent = "🪐 Zero Gravity (On)";
+                gravityBtn.classList.add('active');
+            } else {
+                // 무중력 OFF
+                engine.gravity.y = 1;
+                engine.gravity.scale = 0.001;
+
+                // 천장 열기
+                Matter.Body.setPosition(ceiling, { x: width / 2, y: -200 });
+
+                Composite.allBodies(world).forEach(body => {
+                    if (!body.isStatic) body.frictionAir = 0.01;
+                });
+
+                gravityBtn.textContent = "🚀 Zero Gravity (Off)";
+                gravityBtn.classList.remove('active');
+            }
+        });
+
+        // ==========================================
+        // 기능 4: 초기화
+        // ==========================================
+        document.getElementById('resetBtn').addEventListener('click', function () {
+            const bodies = Composite.allBodies(world);
+            const bodiesToRemove = bodies.filter(body => !body.isStatic);
+            World.remove(world, bodiesToRemove);
+        });
+
+    </script>
+</body>
+
+</html>

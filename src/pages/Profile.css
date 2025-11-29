@@ -1,0 +1,53 @@
+.profile-container {
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 80px;
+    /* Space for bottom nav */
+}
+
+.profile-header {
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-section {
+    text-align: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    width: 80%;
+}
+
+.signup-btn {
+    background-color: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    transition: transform 0.1s;
+}
+
+.signup-btn:active {
+    transform: scale(0.95);
+}
+
+.click-counter {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
