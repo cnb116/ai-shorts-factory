@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// ⚠️ API KEY 설정 (스크린샷의 키 강제 적용)
-const API_KEY = "AIzaSyC0Z1PocLT8um1Pt2ybOHW175-tmYp-uuM";
+// ⚠️ API KEY 설정 (환경 변수 사용)
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 const App = () => {
   const [topic, setTopic] = useState("");
@@ -35,6 +35,9 @@ const App = () => {
     setCards([]);
     setIsPlaying(false);
     setDebugLog("🚀 생성 시작...");
+
+    // API Key 확인 로그 (앞 8자리만 표시)
+    log("🔑 API Key 확인: " + (API_KEY ? API_KEY.substring(0, 8) + "..." : "없음"));
 
     try {
       // 모델 변경: list_models.py 결과에 따라 gemini-2.5-flash 사용
@@ -182,6 +185,7 @@ const App = () => {
   // 재생 모드 시작
   const startAutoPlay = () => {
     if (cards?.length === 0) return;
+    log("▶️ 전체 재생 시작");
     setIsPlaying(true);
     setCurrentIndex(0);
   };
@@ -203,7 +207,13 @@ const App = () => {
   // 녹화 시작 함수
   const startRecording = async () => {
     try {
-      // 0. 사용자 안내 (필수) - confirm 창으로 변경하여 가독성 및 취소 옵션 제공
+      // 0. 모바일 지원 여부 확인
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        alert("📱 모바일 브라우저 보안 정책상 '앱 내 화면 녹화'가 불가능합니다.\n\n상단바를 내려 휴대폰 자체의 [화면 녹화] 기능을 켜고 '전체 재생'을 눌러주세요!");
+        return;
+      }
+
+      // 1. 사용자 안내 (필수)
       const confirmed = window.confirm(
         "🎥 [녹화 준비 가이드]\n\n" +
         "브라우저 화면 공유 창이 뜨면 다음을 꼭 지켜주세요!\n\n" +
@@ -216,15 +226,19 @@ const App = () => {
 
       if (!confirmed) return;
 
-      // 1. 화면 공유 요청 (오디오 포함)
+      // 2. 화면 공유 요청 (오디오 포함)
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true,
         preferCurrentTab: true // Chrome 힌트
       });
 
-      // 2. MediaRecorder 설정
-      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+      // 3. MediaRecorder 설정 (코덱 지원 확인)
+      const mimeType = MediaRecorder.isTypeSupported("video/webm; codecs=vp9")
+        ? "video/webm; codecs=vp9"
+        : "video/webm"; // Fallback
+
+      const recorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = recorder;
       recordedChunks.current = [];
 
@@ -249,11 +263,11 @@ const App = () => {
         setIsRecording(false);
       };
 
-      // 3. 녹화 시작
+      // 4. 녹화 시작
       recorder.start();
       setIsRecording(true);
 
-      // 4. 자동 재생 실행 (100ms 딜레이)
+      // 5. 자동 재생 실행 (100ms 딜레이)
       setTimeout(() => startAutoPlay(), 100);
 
     } catch (err) {
