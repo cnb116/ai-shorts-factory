@@ -1,0 +1,131 @@
+.my-projects-container {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #000;
+    color: #fff;
+    padding-bottom: 100px;
+    overflow-y: auto;
+}
+
+.projects-header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 10;
+    border-bottom: 1px solid #333;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #fff;
+}
+
+.projects-grid {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+}
+
+.project-card {
+    background: #1a1a1a;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #333;
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.project-card:hover {
+    transform: translateY(-4px);
+    border-color: #555;
+}
+
+.project-thumbnail {
+    width: 100%;
+    aspect-ratio: 9/16;
+    background-color: #333;
+    position: relative;
+}
+
+.project-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.status-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.status-draft {
+    background: #f59e0b;
+}
+
+.status-published {
+    background: #10b981;
+}
+
+.status-processing {
+    background: #3b82f6;
+}
+
+.project-info {
+    padding: 12px;
+}
+
+.project-title {
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.project-date {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.create-new-card {
+    background: #111;
+    border: 2px dashed #333;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 9/16;
+    /* Match card height roughly */
+    cursor: pointer;
+    color: #555;
+    transition: all 0.2s;
+    min-height: 250px;
+}
+
+.create-new-card:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.plus-icon {
+    font-size: 3rem;
+    margin-bottom: 8px;
+}

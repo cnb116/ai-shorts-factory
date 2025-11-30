@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // [함수 정의] 내 데이터인지 확인하는 헬퍼 함수
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // 1. 사용자 프로필: 본인만 읽고 쓰기 가능
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 2. 쇼츠 프로젝트: 이 앱의 핵심 규칙
+    match /shorts_projects/{projectId} {
+      // 생성: 로그인한 사람은 누구나 가능
+      allow create: if request.auth != null;
+      
+      // 읽기: 주인은 언제나 가능 OR 공개(isPublic) 설정된 글은 누구나 가능
+      allow read: if resource.data.ownerId == request.auth.uid || resource.data.isPublic == true;
+      
+      // 수정/삭제: 오직 주인만 가능
+      allow update, delete: if resource.data.ownerId == request.auth.uid;
+    }
+  }
+}

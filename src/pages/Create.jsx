@@ -226,7 +226,8 @@ const Create = ({ isOpen, onClose, addShort }) => {
                     {step === 3 && generatedVideo && (
                         <div className="step-preview">
                             {/* BGM 컨트롤러 추가 */}
-                            <div className="bgm-control-panel" style={{ marginBottom: '15px', background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {/* BGM 컨트롤러 추가 */}
+                            <div className="bgm-control-panel">
                                 <span style={{ fontSize: '1.2rem' }}>🎧</span>
                                 <select
                                     value={selectedBgm}
@@ -239,14 +240,14 @@ const Create = ({ isOpen, onClose, addShort }) => {
                                             else bgmRef.current.pause();
                                         }
                                     }}
-                                    style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #555', background: '#222', color: 'white' }}
+                                    className="bgm-select"
                                 >
                                     {BGM_LIST.map((bgm, idx) => (
                                         <option key={idx} value={bgm.url}>{bgm.name}</option>
                                     ))}
                                 </select>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                    <span style={{ fontSize: '0.8rem', color: '#aaa' }}>Vol</span>
+                                <div className="bgm-volume-wrapper">
+                                    <span className="bgm-volume-label">Vol</span>
                                     <input
                                         type="range"
                                         min="0"
@@ -258,7 +259,7 @@ const Create = ({ isOpen, onClose, addShort }) => {
                                             setBgmVolume(vol);
                                             if (bgmRef.current) bgmRef.current.volume = vol;
                                         }}
-                                        style={{ width: '60px' }}
+                                        className="bgm-volume-slider"
                                     />
                                 </div>
                                 <audio ref={bgmRef} loop />

@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // projects 폴더 내부는 로그인한 사람 누구나 업로드 가능 (단순화 버전)
+    match /projects/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
