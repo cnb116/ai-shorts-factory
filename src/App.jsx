@@ -2,11 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // ⚠️ API KEY 설정 (환경 변수 사용)
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
 const App = () => {
-  // State for API Key
-  const [apiKey, setApiKey] = useState(localStorage.getItem("gemini_api_key") || import.meta.env.VITE_GEMINI_API_KEY || "");
+  // State for API Key (Safe LocalStorage Access)
+  const [apiKey, setApiKey] = useState(() => {
+    try {
+      return localStorage.getItem("gemini_api_key") || import.meta.env.VITE_GEMINI_API_KEY || "";
+    } catch (e) {
+      console.warn("LocalStorage access denied:", e);
+      return import.meta.env.VITE_GEMINI_API_KEY || "";
+    }
+  });
   const [showSettings, setShowSettings] = useState(false);
 
   // Gemini 인스턴스 생성 (API Key가 변경될 때마다)
@@ -15,9 +20,14 @@ const App = () => {
   // API Key 저장 함수
   const handleSaveKey = (key) => {
     setApiKey(key);
-    localStorage.setItem("gemini_api_key", key);
+    try {
+      localStorage.setItem("gemini_api_key", key);
+      alert("API Key가 안전하게 저장되었습니다!");
+    } catch (e) {
+      console.error("LocalStorage save failed:", e);
+      alert("브라우저 보안 설정으로 인해 키 자동 저장이 불가능합니다. (앱 사용은 가능합니다)");
+    }
     setShowSettings(false);
-    alert("API Key가 저장되었습니다! 다시 시도해보세요.");
   };
 
   // 로그 출력 함수
