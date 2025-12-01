@@ -300,7 +300,7 @@ const App = () => {
           <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide pt-6 md:pt-12">
             <header className="text-center space-y-2 mt-4">
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
-                AI Shorts Maker
+                AI Shorts Maker 🚀
               </h1>
               <p className="text-gray-400 text-xs">나만의 쇼츠를 만들어보세요!</p>
             </header>
@@ -318,8 +318,8 @@ const App = () => {
                 onClick={generateContent}
                 disabled={loading}
                 className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${loading
-                    ? "bg-gray-600 cursor-not-allowed"
-                    : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-lg hover:shadow-purple-500/30"
+                  ? "bg-gray-600 cursor-not-allowed"
+                  : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-lg hover:shadow-purple-500/30"
                   }`}
               >
                 {loading ? (
