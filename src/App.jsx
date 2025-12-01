@@ -5,21 +5,20 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 const App = () => {
-  const [topic, setTopic] = useState("");
-  const [cards, setCards] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [debugLog, setDebugLog] = useState(""); // 디버깅 로그 상태
-  const [isRecording, setIsRecording] = useState(false); // 녹화 상태
+  // State for API Key
+  const [apiKey, setApiKey] = useState(localStorage.getItem("gemini_api_key") || import.meta.env.VITE_GEMINI_API_KEY || "");
+  const [showSettings, setShowSettings] = useState(false);
 
-  const cardRefs = useRef([]);
-  const mediaRecorderRef = useRef(null);
-  const recordedChunks = useRef([]);
-  const currentAudioRef = useRef(null); // 현재 재생 중인 오디오 객체
+  // Gemini 인스턴스 생성 (API Key가 변경될 때마다)
+  const getGenAI = () => new GoogleGenerativeAI(apiKey);
 
-  // Gemini 인스턴스 초기화
-  const genAI = new GoogleGenerativeAI(API_KEY);
+  // API Key 저장 함수
+  const handleSaveKey = (key) => {
+    setApiKey(key);
+    localStorage.setItem("gemini_api_key", key);
+    setShowSettings(false);
+    alert("API Key가 저장되었습니다! 다시 시도해보세요.");
+  };
 
   // 로그 출력 함수
   const log = (message, isError = false) => {
@@ -30,6 +29,11 @@ const App = () => {
   // 1. 콘텐츠 생성 (Gemini + Pollinations)
   const generateContent = async () => {
     if (!topic) return alert("주제를 입력해주세요!");
+    if (!apiKey) {
+      alert("API Key가 없습니다. 설정 버튼(⚙️)을 눌러 키를 입력해주세요.");
+      setShowSettings(true);
+      return;
+    }
 
     setLoading(true);
     setCards([]);
@@ -37,12 +41,13 @@ const App = () => {
     setDebugLog("🚀 생성 시작...");
 
     // API Key 확인 로그 (앞 8자리만 표시)
-    log("🔑 API Key 확인: " + (API_KEY ? API_KEY.substring(0, 8) + "..." : "없음"));
+    log("🔑 API Key 확인: " + (apiKey ? apiKey.substring(0, 8) + "..." : "없음"));
 
     try {
       // 모델 변경: list_models.py 결과에 따라 gemini-2.5-flash 사용
       const modelName = "gemini-2.5-flash";
       log(`🤖 모델 설정: ${modelName}`);
+      const genAI = getGenAI();
       const model = genAI.getGenerativeModel({ model: modelName });
 
       const prompt = `
@@ -94,7 +99,13 @@ const App = () => {
       console.error("Error generating content:", error);
       // 구체적인 에러 메시지 출력
       log(`❌ 오류 발생: ${error.message}`, true);
-      alert(`오류가 발생했습니다:\n${error.message}`);
+
+      if (error.message.includes("API key not valid") || error.message.includes("400") || error.message.includes("403")) {
+        alert("API Key가 올바르지 않습니다. 설정에서 키를 다시 확인해주세요.");
+        setShowSettings(true);
+      } else {
+        alert(`오류가 발생했습니다:\n${error.message}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -298,12 +309,49 @@ const App = () => {
         {/* 헤더 & 입력창 (재생 중에는 숨김, 스크롤 가능) */}
         {!isPlaying && (
           <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide pt-6 md:pt-12">
-            <header className="text-center space-y-2 mt-4">
+            <header className="text-center space-y-2 mt-4 relative">
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
                 AI Shorts Maker 🚀
               </h1>
               <p className="text-gray-400 text-xs">나만의 쇼츠를 만들어보세요!</p>
+              <button
+                onClick={() => setShowSettings(true)}
+                className="absolute right-0 top-0 text-xl p-2 opacity-50 hover:opacity-100"
+              >
+                ⚙️
+              </button>
             </header>
+
+            {/* 설정 모달 */}
+            {showSettings && (
+              <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
+                <div className="bg-gray-900 p-6 rounded-2xl border border-gray-700 w-full max-w-xs shadow-2xl">
+                  <h3 className="text-white font-bold mb-4">⚙️ API Key 설정</h3>
+                  <p className="text-xs text-gray-400 mb-2">Google AI Studio 키를 입력하세요.</p>
+                  <input
+                    type="password"
+                    placeholder="AIza..."
+                    className="w-full bg-black text-white p-3 rounded-xl border border-gray-600 mb-4 text-sm"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleSaveKey(apiKey)}
+                      className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold text-sm"
+                    >
+                      저장
+                    </button>
+                    <button
+                      onClick={() => setShowSettings(false)}
+                      className="flex-1 bg-gray-700 text-white py-3 rounded-xl font-bold text-sm"
+                    >
+                      닫기
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="bg-gray-800 p-4 rounded-2xl border border-gray-700 shadow-lg">
               <input
