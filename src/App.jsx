@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Header from './components/Header';
+import InputForm from './components/InputForm';
+import ResultCard from './components/ResultCard';
+import ControlPanel from './components/ControlPanel';
 
-// ⚠️ API KEY 설정 (환경 변수 사용)
 const App = () => {
   // State for API Key (Safe LocalStorage Access)
   const [apiKey, setApiKey] = useState(() => {
@@ -13,6 +16,19 @@ const App = () => {
     }
   });
   const [showSettings, setShowSettings] = useState(false);
+
+  const [topic, setTopic] = useState("");
+  const [cards, setCards] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [debugLog, setDebugLog] = useState(""); // 디버깅 로그 상태
+  const [isRecording, setIsRecording] = useState(false); // 녹화 상태
+
+  const cardRefs = useRef([]);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunks = useRef([]);
+  const currentAudioRef = useRef(null); // 현재 재생 중인 오디오 객체
 
   // Gemini 인스턴스 생성 (API Key가 변경될 때마다)
   const getGenAI = () => new GoogleGenerativeAI(apiKey);
@@ -319,80 +335,21 @@ const App = () => {
         {/* 헤더 & 입력창 (재생 중에는 숨김, 스크롤 가능) */}
         {!isPlaying && (
           <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide pt-6 md:pt-12">
-            <header className="text-center space-y-2 mt-4 relative">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
-                AI Shorts Maker 🚀
-              </h1>
-              <p className="text-gray-400 text-xs">나만의 쇼츠를 만들어보세요!</p>
-              <button
-                onClick={() => setShowSettings(true)}
-                className="absolute right-0 top-0 text-xl p-2 opacity-50 hover:opacity-100"
-              >
-                ⚙️
-              </button>
-            </header>
 
-            {/* 설정 모달 */}
-            {showSettings && (
-              <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
-                <div className="bg-gray-900 p-6 rounded-2xl border border-gray-700 w-full max-w-xs shadow-2xl">
-                  <h3 className="text-white font-bold mb-4">⚙️ API Key 설정</h3>
-                  <p className="text-xs text-gray-400 mb-2">Google AI Studio 키를 입력하세요.</p>
-                  <input
-                    type="password"
-                    placeholder="AIza..."
-                    className="w-full bg-black text-white p-3 rounded-xl border border-gray-600 mb-4 text-sm"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleSaveKey(apiKey)}
-                      className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold text-sm"
-                    >
-                      저장
-                    </button>
-                    <button
-                      onClick={() => setShowSettings(false)}
-                      className="flex-1 bg-gray-700 text-white py-3 rounded-xl font-bold text-sm"
-                    >
-                      닫기
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            <Header
+              onOpenSettings={() => setShowSettings(true)}
+              showSettings={showSettings}
+              onCloseSettings={() => setShowSettings(false)}
+              apiKey={apiKey}
+              onSaveKey={handleSaveKey}
+            />
 
-            <div className="bg-gray-800 p-4 rounded-2xl border border-gray-700 shadow-lg">
-              <input
-                type="text"
-                placeholder="주제 입력 (예: 고양이의 하루)"
-                className="w-full bg-gray-900 text-white p-4 rounded-xl border border-gray-600 focus:border-purple-500 focus:outline-none mb-4 text-sm"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && generateContent()}
-              />
-              <button
-                onClick={generateContent}
-                disabled={loading}
-                className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${loading
-                  ? "bg-gray-600 cursor-not-allowed"
-                  : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-lg hover:shadow-purple-500/30"
-                  }`}
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    생성 중...
-                  </span>
-                ) : (
-                  "✨ 쇼츠 생성하기"
-                )}
-              </button>
-            </div>
+            <InputForm
+              topic={topic}
+              setTopic={setTopic}
+              onGenerate={generateContent}
+              loading={loading}
+            />
 
             {/* 디버그 로그 영역 */}
             {debugLog && (
@@ -409,15 +366,7 @@ const App = () => {
             {!isPlaying && cards?.length > 0 && (
               <div className="space-y-4 pb-24">
                 {cards.map((card, index) => (
-                  <div key={card.id} className="relative rounded-xl overflow-hidden aspect-[9/16] border border-gray-800 group cursor-pointer hover:border-purple-500 transition-all">
-                    <img src={card.imageUrl} alt="preview" className="absolute inset-0 w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-white font-bold">미리보기</span>
-                    </div>
-                    <div className="absolute bottom-0 inset-x-0 bg-black/60 p-3 text-xs text-white truncate backdrop-blur-sm">
-                      {index + 1}. {card.text}
-                    </div>
-                  </div>
+                  <ResultCard key={card.id} card={card} index={index} />
                 ))}
               </div>
             )}
@@ -468,31 +417,13 @@ const App = () => {
 
         {/* 하단 컨트롤 바 (Fixed within Phone Container) */}
         {cards?.length > 0 && (
-          <div className="absolute bottom-6 left-0 right-0 z-50 flex gap-2 px-4 justify-center">
-            {!isPlaying ? (
-              <>
-                <button
-                  onClick={startAutoPlay}
-                  className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white py-4 rounded-full font-bold shadow-lg hover:shadow-green-500/30 transition-all animate-bounce text-sm"
-                >
-                  <span>▶️</span> 전체 재생
-                </button>
-                <button
-                  onClick={startRecording}
-                  className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white py-4 rounded-full font-bold shadow-lg hover:shadow-red-500/30 transition-all text-sm"
-                >
-                  <span>💾</span> 영상 추출
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={stopAutoPlay}
-                className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white py-4 rounded-full font-bold shadow-lg hover:shadow-red-500/30 transition-all"
-              >
-                <span>⏹️</span> {isRecording ? "녹화 및 재생 중지" : "재생 중지"}
-              </button>
-            )}
-          </div>
+          <ControlPanel
+            isPlaying={isPlaying}
+            isRecording={isRecording}
+            onStartAutoPlay={startAutoPlay}
+            onStartRecording={startRecording}
+            onStop={stopAutoPlay}
+          />
         )}
       </div>
     </div>
