@@ -6,16 +6,9 @@ import ResultCard from './components/ResultCard';
 import ControlPanel from './components/ControlPanel';
 
 const App = () => {
-  // State for API Key (Safe LocalStorage Access)
-  const [apiKey, setApiKey] = useState(() => {
-    try {
-      return localStorage.getItem("gemini_api_key") || import.meta.env.VITE_GEMINI_API_KEY || "";
-    } catch (e) {
-      console.warn("LocalStorage access denied:", e);
-      return import.meta.env.VITE_GEMINI_API_KEY || "";
-    }
-  });
-  const [showSettings, setShowSettings] = useState(false);
+  // API Key from Environment Variable
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  console.log("Current API Key:", apiKey ? apiKey.substring(0, 8) + "..." : "Not Found");
 
   const [topic, setTopic] = useState("");
   const [cards, setCards] = useState([]);
@@ -24,6 +17,7 @@ const App = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [debugLog, setDebugLog] = useState(""); // 디버깅 로그 상태
   const [isRecording, setIsRecording] = useState(false); // 녹화 상태
+  const [isKakaoBrowser, setIsKakaoBrowser] = useState(false); // 카카오톡 인앱 브라우저 감지
 
   const cardRefs = useRef([]);
   const mediaRecorderRef = useRef(null);
@@ -33,18 +27,23 @@ const App = () => {
   // Gemini 인스턴스 생성 (API Key가 변경될 때마다)
   const getGenAI = () => new GoogleGenerativeAI(apiKey);
 
-  // API Key 저장 함수
-  const handleSaveKey = (key) => {
-    setApiKey(key);
-    try {
-      localStorage.setItem("gemini_api_key", key);
-      alert("API Key가 안전하게 저장되었습니다!");
-    } catch (e) {
-      console.error("LocalStorage save failed:", e);
-      alert("브라우저 보안 설정으로 인해 키 자동 저장이 불가능합니다. (앱 사용은 가능합니다)");
+  // 카카오톡 인앱 브라우저 감지 및 탈출 로직
+  useEffect(() => {
+    const userAgent = navigator.userAgent;
+    // 카카오톡 인앱 브라우저라면
+    if (userAgent.match(/KAKAOTALK/i)) {
+      // 안드로이드: 크롬으로 자동 전환
+      if (userAgent.match(/Android/i)) {
+        location.href = 'intent://' + location.href.replace(/https?:\/\//i, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+      }
+      // 아이폰: 안내 모달 표시
+      else if (userAgent.match(/iPhone|iPad|iPod/i)) {
+        setIsKakaoBrowser(true);
+      }
     }
-    setShowSettings(false);
-  };
+  }, []);
+
+  // 로그 출력 함수
 
   // 로그 출력 함수
   const log = (message, isError = false) => {
@@ -55,11 +54,7 @@ const App = () => {
   // 1. 콘텐츠 생성 (Gemini + Pollinations)
   const generateContent = async () => {
     if (!topic) return alert("주제를 입력해주세요!");
-    if (!apiKey) {
-      alert("API Key가 없습니다. 설정 버튼(⚙️)을 눌러 키를 입력해주세요.");
-      setShowSettings(true);
-      return;
-    }
+    if (!topic) return alert("주제를 입력해주세요!");
 
     setLoading(true);
     setCards([]);
@@ -127,8 +122,7 @@ const App = () => {
       log(`❌ 오류 발생: ${error.message}`, true);
 
       if (error.message.includes("API key not valid") || error.message.includes("400") || error.message.includes("403")) {
-        alert("API Key가 올바르지 않습니다. 설정에서 키를 다시 확인해주세요.");
-        setShowSettings(true);
+        alert("API Key가 올바르지 않습니다. 코드를 확인해주세요.");
       } else {
         alert(`오류가 발생했습니다:\n${error.message}`);
       }
@@ -336,13 +330,7 @@ const App = () => {
         {!isPlaying && (
           <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide pt-6 md:pt-12">
 
-            <Header
-              onOpenSettings={() => setShowSettings(true)}
-              showSettings={showSettings}
-              onCloseSettings={() => setShowSettings(false)}
-              apiKey={apiKey}
-              onSaveKey={handleSaveKey}
-            />
+            <Header />
 
             <InputForm
               topic={topic}
@@ -424,6 +412,39 @@ const App = () => {
             onStartRecording={startRecording}
             onStop={stopAutoPlay}
           />
+        )}
+        {/* 카카오톡 인앱 브라우저 안내 모달 (iOS) */}
+        {isKakaoBrowser && (
+          <div className="absolute inset-0 z-[100] bg-black/90 flex flex-col justify-center items-center p-8 text-center animate-fade-in">
+            <div className="bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700 max-w-xs">
+              <div className="text-4xl mb-4">⚠️</div>
+              <h2 className="text-xl font-bold text-white mb-3">브라우저 변경 안내</h2>
+              <p className="text-gray-300 text-sm leading-relaxed mb-6">
+                카카오톡에서는 오디오 재생이<br />
+                원활하지 않을 수 있습니다.
+              </p>
+              <div className="space-y-3 text-left bg-black/50 p-4 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <span className="bg-yellow-500 text-black font-bold rounded-full w-5 h-5 flex items-center justify-center text-xs mt-0.5">1</span>
+                  <p className="text-gray-200 text-xs">화면 우측 하단 <span className="text-white font-bold">점 3개(⋯)</span> 클릭</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="bg-yellow-500 text-black font-bold rounded-full w-5 h-5 flex items-center justify-center text-xs mt-0.5">2</span>
+                  <p className="text-gray-200 text-xs"><span className="text-white font-bold">다른 브라우저로 열기</span> 선택</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsKakaoBrowser(false)}
+                className="mt-6 w-full py-3 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors"
+              >
+                닫기 (그냥 계속하기)
+              </button>
+            </div>
+            {/* 화살표 애니메이션 (우측 하단을 가리킴) */}
+            <div className="absolute bottom-8 right-8 animate-bounce">
+              <span className="text-4xl">↘️</span>
+            </div>
+          </div>
         )}
       </div>
     </div>
